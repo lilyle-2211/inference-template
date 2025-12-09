@@ -4,7 +4,7 @@
 replicaCount: 2
 
 image:
-  repository: us-central1-docker.pkg.dev/lily-demo-ml/churn-pipeline/churn-inference
+  repository: us-central1-docker.pkg.dev/lily-demo-ml/inference-template/inference-template
   pullPolicy: Always
   tag: "latest"
 
@@ -16,8 +16,8 @@ serviceAccount:
   create: true
   annotations:
     # Workload Identity annotation - links K8s SA to GCP SA
-    iam.gke.io/gcp-service-account: churn-inference@lily-demo-ml.iam.gserviceaccount.com
-  name: "churn-inference-sa"
+    iam.gke.io/gcp-service-account: inference-template@lily-demo-ml.iam.gserviceaccount.com
+  name: "inference-template-sa"
 
 podAnnotations: {}
 

@@ -3,7 +3,7 @@ name: CD - Inference to GKE
 on:
   push:
     branches:
-      - dev
+      - main
     paths:
       - 'inference/**'
       - 'docker/Dockerfile.inference'
@@ -15,7 +15,7 @@ on:
 env:
   PROJECT_ID: lily-demo-ml
   REGION: us-central1
-  GKE_CLUSTER: fastapi-cluster
+  GKE_CLUSTER: inference-template-cluster
   GKE_ZONE: us-central1-a
 
 jobs:
@@ -66,7 +66,7 @@ jobs:
         run: make helm-upgrade
 
       - name: Wait for rollout
-        run: kubectl rollout status deployment/churn-inference --timeout=5m
+        run: kubectl rollout status deployment/inference-template --timeout=5m
 
       - name: Test inference endpoints
         run: make test-gke
@@ -74,7 +74,7 @@ jobs:
       - name: Deployment summary
         if: success()
         run: |
-          SERVICE_IP=$(kubectl get service churn-inference -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          SERVICE_IP=$(kubectl get service inference-template -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           echo "Inference service deployed successfully!"
           echo "Service IP: $SERVICE_IP"
           echo "Swagger UI: http://$SERVICE_IP/docs"

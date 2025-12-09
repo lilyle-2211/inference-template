@@ -118,7 +118,7 @@ variable "k8s_namespace" {
 
 variable "k8s_service_account" {
   type    = string
-  default = "churn-inference-sa"
+  default = "inference-template-sa"
 }
 
 variable "workload_identity_pool_id" {
