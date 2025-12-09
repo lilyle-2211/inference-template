@@ -1,0 +1,80 @@
+name: CD - Inference to GKE
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'inference/**'
+      - 'docker/Dockerfile.inference'
+      - 'helm/**'
+      - 'pyproject.toml'
+      - '.github/workflows/cd-inference.yml'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  PROJECT_ID: lily-demo-ml
+  REGION: us-central1
+  GKE_CLUSTER: fastapi-cluster
+  GKE_ZONE: us-central1-a
+
+jobs:
+  deploy-inference:
+    name: Deploy to GKE
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # Required for Workload Identity Federation
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: true
+          cleanup_credentials: true
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Install Helm
+        run: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Configure kubectl
+        run: |
+          gcloud components install kubectl gke-gcloud-auth-plugin --quiet
+          gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} \
+            --zone=${{ env.GKE_ZONE }} \
+            --project=${{ env.PROJECT_ID }}
+
+      - name: Build and push Docker image (Cloud Build)
+        run: |
+          # Submit build; output contains console link
+          gcloud builds submit --config docker/cloudbuild.yaml --substitutions _PROJECT_ID=${{ env.PROJECT_ID }},_REGION=${{ env.REGION }} . | tee build_output.txt
+          # Print Cloud Build console link to the job log for manual inspection
+          grep -oE 'https://console.cloud.google.com/cloud-build/builds/[a-z0-9-]+' build_output.txt || true
+        env:
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+          REGION: ${{ env.REGION }}
+
+      - name: Deploy with Helm
+        run: make helm-upgrade
+
+      - name: Wait for rollout
+        run: kubectl rollout status deployment/churn-inference --timeout=5m
+
+      - name: Test inference endpoints
+        run: make test-gke
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          SERVICE_IP=$(kubectl get service churn-inference -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Inference service deployed successfully!"
+          echo "Service IP: $SERVICE_IP"
+          echo "Swagger UI: http://$SERVICE_IP/docs"
