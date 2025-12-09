@@ -1,7 +1,7 @@
 # GKE Cluster (Standard Mode)
-resource "google_container_cluster" "ml_cluster" {
+resource "google_container_cluster" "inference_template_cluster" {
   project               = var.project_id
-  name                  = "fastapi-cluster"
+  name                  = var.gke_cluster_name
   location              = var.gke_cluster_location
   remove_default_node_pool = true
   initial_node_count    = 1
@@ -20,12 +20,11 @@ resource "google_container_cluster" "ml_cluster" {
 }
 
 # Node Pool for standard mode
-resource "google_container_node_pool" "ml_nodes" {
+resource "google_container_node_pool" "inference_template_nodes" {
   count = var.gke_enable_autopilot ? 0 : 1
-
-  name     = "ml-node-pool"
+  name     = var.gke_node_pool_name
   location = var.gke_zone
-  cluster  = google_container_cluster.ml_cluster.name
+  cluster  = google_container_cluster.inference_template_cluster.name
 
   initial_node_count = var.gke_initial_node_count
 
@@ -60,16 +59,16 @@ resource "google_container_node_pool" "ml_nodes" {
 
 # Service Account for inference workload
 resource "google_service_account" "inference_sa" {
-  account_id   = "churn-inference"
-  display_name = "Churn Inference Service Account"
-  description  = "Service account for churn inference pods to access GCS"
+  account_id   = var.inference_sa_account_id
+  display_name = "Inference Template Service Account"
+  description  = "Service account for inference template pods to access GCS"
 
   depends_on = [google_project_service.required_apis]
 }
 
 # Grant GCS read permissions to inference service account
 resource "google_storage_bucket_iam_member" "inference_sa_gcs_read" {
-  bucket = "lily-ml-models-20251205"
+  bucket = var.models_bucket_name
   role   = "roles/storage.objectViewer"
   member = "serviceAccount:${google_service_account.inference_sa.email}"
 }
@@ -78,5 +77,5 @@ resource "google_storage_bucket_iam_member" "inference_sa_gcs_read" {
 resource "google_service_account_iam_member" "inference_workload_identity" {
   service_account_id = google_service_account.inference_sa.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "serviceAccount:${var.project_id}.svc.id.goog[default/churn-inference-sa]"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[${var.k8s_namespace}/${var.k8s_service_account}]"
 }

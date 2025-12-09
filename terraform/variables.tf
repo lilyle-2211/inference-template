@@ -1,18 +1,18 @@
 variable "project_id" {
-  description = "GCP Project ID"
   type        = string
+  description = "GCP project id"
   default     = "lily-demo-ml"
 }
 
 variable "project_number" {
-  description = "GCP Project Number"
   type        = string
+  description = "GCP project number (used for service account members)"
   default     = "167672209455"
 }
 
 variable "region" {
-  description = "GCP Region"
   type        = string
+  description = "GCP region"
   default     = "us-central1"
 }
 
@@ -21,7 +21,6 @@ variable "user_emails" {
   type        = list(string)
   default     = []
 }
-
 
 variable "github_org" {
   description = "GitHub organization or username"
@@ -32,57 +31,104 @@ variable "github_org" {
 variable "github_repo" {
   description = "GitHub repository name"
   type        = string
-  default     = "ml-production-demo"
+  default     = "inference-template"
 }
 
-# ============================================================================
+variable "artifact_repo_id" {
+  type        = string
+  description = "Artifact Registry repository id (DOCKER)"
+  default     = "inference-template"
+}
+
+variable "storage_bucket_name" {
+  type        = string
+  description = "Suffix for GCS bucket; final bucket name will be <project_id>-<storage_bucket_name>"
+  default     = "inference-template-bucket"
+}
+
+# ==========================================================================
 # GKE Variables
-# ============================================================================
+# ==========================================================================
 
 variable "gke_cluster_name" {
-  description = "GKE cluster name"
   type        = string
-  default     = "fastapi-cluster"
+  description = "GKE cluster name"
+  default     = "inference-template-cluster"
 }
 
 variable "gke_cluster_location" {
-  description = "Location for the GKE cluster"
   type        = string
-  default     = "us-central1-a"
+  description = "Location for the GKE cluster (region or zone depending on resource)"
+  default     = "us-central1"
 }
 
 variable "gke_zone" {
-  description = "Zone for the GKE cluster"
   type        = string
+  description = "Zone for node pools"
   default     = "us-central1-a"
 }
 
-variable "gke_enable_autopilot" {
-  description = "Enable GKE Autopilot mode (true) or Standard mode (false)"
-  type        = bool
-  default     = false
-}
-
-variable "gke_machine_type" {
-  description = "Machine type for GKE nodes (standard mode only)"
+variable "gke_node_pool_name" {
   type        = string
-  default     = "n1-standard-2"
+  description = "GKE node pool name"
+  default     = "ml-node-pool"
 }
 
 variable "gke_initial_node_count" {
-  description = "Initial number of nodes per zone (standard mode only)"
-  type        = number
-  default     = 2
+  type    = number
+  default = 1
 }
 
 variable "gke_min_nodes" {
-  description = "Minimum number of nodes for autoscaling (standard mode only)"
-  type        = number
-  default     = 1
+  type    = number
+  default = 1
 }
 
 variable "gke_max_nodes" {
-  description = "Maximum number of nodes for autoscaling (standard mode only)"
-  type        = number
-  default     = 3
+  type    = number
+  default = 3
+}
+
+variable "gke_machine_type" {
+  type    = string
+  default = "e2-medium"
+}
+
+variable "gke_enable_autopilot" {
+  type    = bool
+  default = false
+}
+
+variable "inference_sa_account_id" {
+  type        = string
+  description = "Service account id for inference workloads"
+  default     = "inference-template"
+}
+
+variable "models_bucket_name" {
+  type        = string
+  description = "Name of the GCS bucket used for models"
+  default     = "lily-ml-models-20251205"
+}
+
+variable "k8s_namespace" {
+  type    = string
+  default = "default"
+}
+
+variable "k8s_service_account" {
+  type    = string
+  default = "churn-inference-sa"
+}
+
+variable "workload_identity_pool_id" {
+  type        = string
+  description = "Existing Workload Identity Pool id"
+  default     = "inference-template"
+}
+
+variable "workload_identity_provider_id" {
+  type        = string
+  description = "Existing Workload Identity Provider id (<=32 chars)"
+  default     = "inference-template"
 }

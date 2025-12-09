@@ -6,8 +6,8 @@ module "github_actions" {
   github_repo = var.github_repo
 
   # Use existing workload identity resources
-  pool_id     = "github-pool-v2"
-  provider_id = "github-provider"
+  pool_id     = var.workload_identity_pool_id
+  provider_id = var.workload_identity_provider_id
 
   depends_on = [google_project_service.required_apis]
 }

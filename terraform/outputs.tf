@@ -1,11 +1,11 @@
 output "artifact_registry_url" {
   description = "Artifact Registry repository URL"
-  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.churn_pipeline.repository_id}"
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.inference_template.repository_id}"
 }
 
 output "bucket_name" {
-  description = "GCS bucket name for pipeline artifacts"
-  value       = google_storage_bucket.pipeline_bucket.name
+  description = "GCS bucket name for inference template artifacts"
+  value       = google_storage_bucket.inference_template_bucket.name
 }
 
 output "project_id" {
@@ -37,18 +37,18 @@ output "github_secrets_instructions" {
 # GKE outputs
 output "gke_cluster_name" {
   description = "GKE cluster name"
-  value       = google_container_cluster.ml_cluster.name
+  value       = google_container_cluster.inference_template_cluster.name
 }
 
 output "gke_cluster_endpoint" {
   description = "GKE cluster endpoint"
-  value       = google_container_cluster.ml_cluster.endpoint
+  value       = google_container_cluster.inference_template_cluster.endpoint
   sensitive   = true
 }
 
 output "gke_cluster_location" {
   description = "GKE cluster location"
-  value       = google_container_cluster.ml_cluster.location
+  value       = google_container_cluster.inference_template_cluster.location
 }
 
 output "inference_service_account" {
@@ -58,5 +58,5 @@ output "inference_service_account" {
 
 output "gke_connect_command" {
   description = "Command to configure kubectl"
-  value       = "gcloud container clusters get-credentials ${google_container_cluster.ml_cluster.name} --zone=${google_container_cluster.ml_cluster.location} --project=${var.project_id}"
+  value       = "gcloud container clusters get-credentials ${google_container_cluster.inference_template_cluster.name} --zone=${google_container_cluster.inference_template_cluster.location} --project=${var.project_id}"
 }
