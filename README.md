@@ -1,15 +1,10 @@
-# Churn Prediction Demo
+# Inference Template
 
-This project demonstrates a production-ready pipeline for churn prediction using Google Cloud Platform (Vertex AI, BigQuery, Artifact Registry, GCS).
+This repository provides a production-ready template for deploying machine learning inference services.
 
-## Features
-- Data loading and preprocessing from BigQuery
-- Time-ordered train/val/test split
-- Hyperparameter tuning with Optuna
-- Model training with XGBoost
-- Evaluation metrics: PR-AUC, ROC-AUC, Precision@k
-- Terraform for infras
-- Makefile automation
-
-
-## Usage
+**Tech stack:**
+- FastAPI for serving models
+- Docker for containerization
+- Helm for Kubernetes deployments
+- Terraform for infrastructure as code
+- GitHub Actions for CI/CD
