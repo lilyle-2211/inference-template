@@ -23,7 +23,7 @@ resource "google_container_cluster" "inference_template_cluster" {
 resource "google_container_node_pool" "inference_template_nodes" {
   count = var.gke_enable_autopilot ? 0 : 1
   name     = var.gke_node_pool_name
-  location = var.gke_zone
+  location = var.gke_cluster_location
   cluster  = google_container_cluster.inference_template_cluster.name
 
   initial_node_count = var.gke_initial_node_count

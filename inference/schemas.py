@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 
 class PredictionInput(BaseModel):
     """Input schema for single prediction."""
-
     f_0: float
     f_1: float
     f_2: float
@@ -18,7 +17,23 @@ class PredictionInput(BaseModel):
 
 class PredictionOutput(BaseModel):
     """Output schema for prediction response."""
-
-    churn_probability: float
-    churn_prediction: int
+    prob_probability: float
+    binary_prediction: int
     model_version: str
+
+class API(BaseModel):
+    """API configuration schema."""
+    host: str = Field(default="0.0.0.0")
+    port: int = Field(default=8000)
+    title: str = Field(default="Inference API")
+
+class GCSConfig(BaseModel):
+    """GCS configuration schema."""
+    bucket_name: str
+    model_path: str
+
+
+class Config(BaseModel):
+    """Top-level configuration model."""
+    gcs: GCSConfig
+    api: API

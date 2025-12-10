@@ -9,4 +9,4 @@ gcs:
 api:
   host: "0.0.0.0"
   port: 8000
-  title: "Churn Prediction API"
+  title: "Inference API"

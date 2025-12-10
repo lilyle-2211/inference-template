@@ -39,6 +39,7 @@ variable "project_roles" {
     "roles/artifactregistry.writer",
     "roles/storage.objectAdmin",
     "roles/cloudbuild.builds.builder",
+    "roles/cloudbuild.builds.viewer",
     "roles/container.developer",
     "roles/serviceusage.serviceUsageConsumer",
     "roles/iam.serviceAccountUser"

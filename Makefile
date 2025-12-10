@@ -48,10 +48,10 @@ push-inference:
 	docker push $(INFERENCE_IMAGE)
 
 push-inference-cloudbuild:
-	gcloud builds submit \
-		--config docker/cloudbuild.yaml \
-		--substitutions _PROJECT_ID=$(PROJECT_ID),_REGION=$(REGION) \
-		.
+	gcloud builds submit --config docker/cloudbuild.yaml \
+		--substitutions _PROJECT_ID=$(PROJECT_ID),_REGION=$(REGION) . | tee build_output.txt
+	# Print Cloud Build console link to the job log for manual inspection
+	grep -oE 'https://console.cloud.google.com/cloud-build/builds/[a-z0-9-]+' build_output.txt || true
 
 helm-upgrade:
 	gcloud container clusters get-credentials inference-template-cluster \

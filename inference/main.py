@@ -1,11 +1,13 @@
 """Simple FastAPI inference service that loads model from GCS."""
 import logging
 from typing import List
+import uvicorn
 
 import pandas as pd
+import xgboost as xgb
 from fastapi import FastAPI, HTTPException
 
-from inference.schemas import PredictionInput, PredictionOutput
+from inference.schemas import PredictionInput, PredictionOutput, API, GCSConfig
 from inference.utils import download_model_from_gcs, load_config, load_model
 
 logging.basicConfig(level=logging.INFO)
@@ -13,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Load config
 config = load_config()
-app = FastAPI(title=config["api"]["title"])
+app = FastAPI(title=config.api.title)
 
 # Global model
 model = None
@@ -26,8 +28,8 @@ async def startup_event():
     global model, model_version
 
     # Get from env vars or config file (env vars take precedence)
-    bucket_name = config["gcs"]["bucket_name"]
-    model_path = config["gcs"]["model_path"]
+    bucket_name = config.gcs.bucket_name
+    model_path = config.gcs.model_path
 
     try:
         # Download and load model from GCS
@@ -65,16 +67,14 @@ def predict(input_data: PredictionInput):
         raise HTTPException(status_code=503, detail="Model not loaded")
 
     try:
-        import xgboost as xgb
-
-        input_df = pd.DataFrame([input_data.dict()])
+        input_df = pd.DataFrame([input_data.model_dump()])
         dmatrix = xgb.DMatrix(input_df)
         prediction_proba = model.predict(dmatrix)[0]
         prediction_binary = int(prediction_proba >= 0.5)
 
         return PredictionOutput(
-            churn_probability=float(prediction_proba),
-            churn_prediction=prediction_binary,
+            prob_probability=float(prediction_proba),
+            binary_prediction=prediction_binary,
             model_version=model_version,
         )
 
@@ -90,17 +90,15 @@ def predict_batch(inputs: List[PredictionInput]):
         raise HTTPException(status_code=503, detail="Model not loaded")
 
     try:
-        import xgboost as xgb
-
-        input_df = pd.DataFrame([inp.dict() for inp in inputs])
+        input_df = pd.DataFrame([inp.model_dump() for inp in inputs])
         dmatrix = xgb.DMatrix(input_df)
         predictions_proba = model.predict(dmatrix)
         predictions_binary = (predictions_proba >= 0.5).astype(int)
 
         results = [
             PredictionOutput(
-                churn_probability=float(prob),
-                churn_prediction=int(binary),
+                predictions_proba=float(prob),
+                predictions_binary=int(binary),
                 model_version=model_version,
             )
             for prob, binary in zip(predictions_proba, predictions_binary)
@@ -114,6 +112,4 @@ def predict_batch(inputs: List[PredictionInput]):
 
 
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host=config["api"]["host"], port=config["api"]["port"])
+    uvicorn.run(app, host=config.api.host, port=config.api.port)

@@ -1,18 +1,29 @@
 """Utility functions for model loading."""
 import logging
 from pathlib import Path
-
 import yaml
+from inference.schemas import Config as AppConfig
+import xgboost as xgb
 from google.cloud import storage
 
 logger = logging.getLogger(__name__)
 
-BUCKET_NAME = "lily-ml-models-20251205"
-MODEL_PATH = "models/churn-prediction-model"
+def load_config(config_path: str = "inference/config.yaml"):
+    """Load YAML config file."""
+    with open(config_path, "r") as f:
+        data = yaml.safe_load(f) or {}
+    return AppConfig(**(data or {}))
+
+config = load_config()
+
+BUCKET_NAME = config.gcs.bucket_name
+MODEL_PATH = config.gcs.model_path
 
 
 def download_model_from_gcs(
-    bucket_name: str = BUCKET_NAME, model_path: str = MODEL_PATH, local_dir: str = "model"
+    bucket_name: str = BUCKET_NAME, 
+    model_path: str = MODEL_PATH, 
+    local_dir: str = "model"
 ) -> str:
     """
     Download model from GCS.
@@ -56,8 +67,6 @@ def load_model(model_dir: str):
     Returns:
         Loaded XGBoost model
     """
-    import xgboost as xgb
-
     model_path = Path(model_dir) / "model.json"
 
     if not model_path.exists():
@@ -70,7 +79,4 @@ def load_model(model_dir: str):
     return model
 
 
-def load_config(config_path: str = "inference/config.yaml"):
-    """Load YAML config file."""
-    with open(config_path, "r") as f:
-        return yaml.safe_load(f)
+

@@ -28,3 +28,6 @@ override.tf.json
 terraform.rc
 
 *.hcl
+
+tfplan*
+
