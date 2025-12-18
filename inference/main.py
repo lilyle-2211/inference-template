@@ -1,11 +1,12 @@
 """Simple FastAPI inference service that loads model from GCS."""
+import json
 import logging
 from typing import List
 import uvicorn
 
 import pandas as pd
 import xgboost as xgb
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 
 from inference.schemas import PredictionInput, PredictionOutput, API, GCSConfig
 from inference.utils import download_model_from_gcs, load_config, load_model
@@ -27,7 +28,7 @@ async def startup_event():
     """Load model on startup."""
     global model, model_version
 
-    # Get from env vars or config file (env vars take precedence)
+    # Get config
     bucket_name = config.gcs.bucket_name
     model_path = config.gcs.model_path
 
@@ -109,6 +110,61 @@ def predict_batch(inputs: List[PredictionInput]):
     except Exception as e:
         logger.error(f"Batch prediction error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.websocket("/ws/predict")
+async def websocket_predict(websocket: WebSocket):
+    """WebSocket endpoint for real-time predictions."""
+    await websocket.accept()
+    
+    try:
+        while True:
+            # Receive JSON data from client
+            data = await websocket.receive_text()
+            
+            try:
+                # Parse input data
+                input_dict = json.loads(data)
+                input_data = PredictionInput(**input_dict)
+                
+                # Check if model is loaded
+                if model is None:
+                    await websocket.send_json({
+                        "error": "Model not loaded",
+                        "status": "error"
+                    })
+                    continue
+                
+                # Make prediction
+                input_df = pd.DataFrame([input_data.model_dump()])
+                dmatrix = xgb.DMatrix(input_df)
+                prediction_proba = model.predict(dmatrix)[0]
+                prediction_binary = int(prediction_proba >= 0.5)
+                
+                # Send prediction result
+                result = {
+                    "prob_probability": float(prediction_proba),
+                    "binary_prediction": prediction_binary,
+                    "model_version": model_version,
+                    "status": "success"
+                }
+                
+                await websocket.send_json(result)
+                
+            except json.JSONDecodeError:
+                await websocket.send_json({
+                    "error": "Invalid JSON format",
+                    "status": "error"
+                })
+            except Exception as e:
+                logger.error(f"WebSocket prediction error: {e}")
+                await websocket.send_json({
+                    "error": str(e),
+                    "status": "error"
+                })
+                
+    except WebSocketDisconnect:
+        logger.info("WebSocket client disconnected")
 
 
 if __name__ == "__main__":

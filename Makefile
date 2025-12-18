@@ -9,6 +9,7 @@ help:
 	@echo "Local Development:"
 	@echo "  make run-local        - Run inference API locally"
 	@echo "  make test-api         - Test local API endpoints"
+	@echo "  make test-websocket   - Test WebSocket endpoint"
 	@echo "  make unit-test        - Unit tests for inference API"
 	@echo "  make lint             - Run pre-commit on all files"
 	@echo ""
@@ -37,7 +38,7 @@ test-api:
 	@echo "API test complete"
 
 unit-test:
-	uv run pytest tests/test_inference_api.py -v
+	uv run pytest tests/test_inference_api.py tests/test_websocket_unit.py -v
 
 lint:
 	uv run pre-commit run --all-files
