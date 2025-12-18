@@ -12,14 +12,22 @@ flowchart TB
         end
 
         subgraph Model_Serving_Layer["Model Serving"]
-            D[Triton / TorchServe<br>Pre-optimized model]
+            D[Triton / TorchServe<br>Pre-optimized Model]
+        end
+
+        subgraph Storage_Layer["Storage Layer"]
+            E[(Redis<br>Session storage)]
         end
     end
 
     A -->|Streaming Audio| B
     B --> C
     C -->|Audio Chunks| D
-    D -->|Partial and Final Transcript| C
+    D -->|Partial / Final Transcript| C
     C -->|Real-time Transcript| B
     B --> A
+
+    %% Redis interaction
+    C -->|Write| E
+    E -->|Read| C
 ```
